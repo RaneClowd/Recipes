@@ -1,0 +1,11 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools" tools:context=".RecipeList">
+
+    <item android:id="@+id/action_add_new" android:title="@string/action_add_new"
+        android:orderInCategory="100" app:showAsAction="never" />
+    <item android:id="@+id/action_sync" android:title="@string/action_sync"
+        android:orderInCategory="200" app:showAsAction="never" />
+    <item android:id="@+id/action_settings" android:title="@string/action_settings"
+        android:orderInCategory="300" app:showAsAction="never" />
+</menu>
