@@ -1,5 +1,8 @@
 package com.mayken.sheldon.recipes;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 
@@ -7,6 +10,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ListView;
 
 
@@ -41,10 +45,36 @@ public class RecipeList extends ActionBarActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_add_new) {
+            openEditActivity();
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void openEditActivity() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        final EditText input = new EditText(this);
+        input.setHint("New Recipe Name");
+        builder.setView(input);
+
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                Intent intent = new Intent(RecipeList.this, EditActivity.class);
+                intent.putExtra(EditActivity.RECIPE_NAME_KEY, input.getText().toString());
+                startActivity(intent);
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+
+        builder.show();
     }
 }
