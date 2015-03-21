@@ -1,8 +1,15 @@
 <resources>
     <string name="app_name">Recipes</string>
 
-    <string name="action_add_new">Add New</string>
+    <string name="action_add_new">Add New...</string>
     <string name="action_sync">Sync</string>
     <string name="action_settings">Settings</string>
+    <string name="title_activity_edit">EditActivity</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="edit_name_text">Name:</string>
+    <string name="edit_recipe_placeholder_name">Name for recipe</string>
+    <string name="edit_ingredients_header">Ingredients</string>
+    <string name="edit_directions_header">Steps</string>
 
 </resources>
