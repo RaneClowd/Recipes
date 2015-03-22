@@ -16,13 +16,54 @@
             android:layout_width="fill_parent"
             android:layout_height="fill_parent">
 
-            <AnalogClock android:id="@+id/tab_ingredients"
+            <LinearLayout android:id="@+id/tab_ingredients" android:orientation="vertical"
                 android:layout_width="fill_parent"
-                android:layout_height="fill_parent"/>
+                android:layout_height="fill_parent">
 
-            <DigitalClock android:id="@+id/tab_steps"
+                <ScrollView
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/scroll1"
+                    android:layout_weight="1" >
+
+                    <LinearLayout
+                        android:id="@+id/edit_indgredient_list"
+                        android:orientation="vertical"
+                        android:layout_width="fill_parent"
+                        android:layout_height="fill_parent" >
+                    </LinearLayout>
+                </ScrollView>
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Capture"
+                    android:id="@+id/edit_ingredients_capture" />
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/tab_steps" android:orientation="vertical"
                 android:layout_width="fill_parent"
-                android:layout_height="fill_parent"/>
+                android:layout_height="fill_parent">
+
+                <ScrollView
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/scroll2"
+                    android:layout_weight="1">
+
+                    <LinearLayout
+                        android:id="@+id/edit_steps_list"
+                        android:orientation="vertical"
+                        android:layout_width="fill_parent"
+                        android:layout_height="fill_parent" />
+                </ScrollView>
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Capture"
+                    android:id="@+id/edit_steps_capture" />
+            </LinearLayout>
 
         </FrameLayout>
 

@@ -3,13 +3,25 @@ package com.mayken.sheldon.recipes;
 import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TabHost;
 
 public class EditActivity extends ActionBarActivity {
 
     public final static String RECIPE_NAME_KEY = "com.mayken.sheldon.recipes.newname";
+
+    private LinearLayout ingredientView;
+    private LinearLayout blankIngredientField;
+
+    private LinearLayout stepsView;
+    private LinearLayout blankStepField;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +43,12 @@ public class EditActivity extends ActionBarActivity {
         spec.setContent(R.id.tab_steps);
         spec.setIndicator("Steps");
         tabs.addTab(spec);
+
+        ingredientView = (LinearLayout)findViewById(R.id.edit_indgredient_list);
+        stepsView = (LinearLayout)findViewById(R.id.edit_steps_list);
+
+        addNewElementToIngredientView("");
+        addNewElementToStepsView("");
     }
 
     @Override
@@ -54,5 +72,120 @@ public class EditActivity extends ActionBarActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+
+    private void addNewElementToIngredientView(String ingredientDesc) {
+        final LinearLayout currentIngredientView = new LinearLayout(this);
+        currentIngredientView.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT
+        ));
+        currentIngredientView.setOrientation(LinearLayout.HORIZONTAL);
+
+        Button deleteButton = new Button(this);
+        deleteButton.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        deleteButton.setText("X");
+        deleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (currentIngredientView != blankIngredientField) {
+                    ingredientView.removeView(currentIngredientView);
+                }
+            }
+        });
+        currentIngredientView.addView(deleteButton);
+
+        EditText newIngredientText = new EditText(this);
+        newIngredientText.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                1f
+        ));
+        newIngredientText.setHint("Ingredient Here...");
+        if (!ingredientDesc.isEmpty()) newIngredientText.setText(ingredientDesc);
+        newIngredientText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (blankIngredientField == currentIngredientView) {
+                    blankIngredientField = null;
+                    EditActivity.this.addNewElementToIngredientView("");
+                } else if (s.length() == 0) {
+                    ingredientView.removeView(blankIngredientField);
+                    blankIngredientField = currentIngredientView;
+                }
+            }
+        });
+        currentIngredientView.addView(newIngredientText);
+
+        ingredientView.addView(currentIngredientView);
+        blankIngredientField = currentIngredientView;
+    }
+
+    private void addNewElementToStepsView(String stepDesc) {
+        final LinearLayout currentStepView = new LinearLayout(this);
+        currentStepView.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT
+        ));
+        currentStepView.setOrientation(LinearLayout.HORIZONTAL);
+
+        Button deleteButton = new Button(this);
+        deleteButton.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.MATCH_PARENT
+        ));
+        deleteButton.setText("X");
+        deleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (currentStepView != blankStepField) {
+                    stepsView.removeView(currentStepView);
+                }
+            }
+        });
+        currentStepView.addView(deleteButton);
+
+        EditText newStepText = new EditText(this);
+        newStepText.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                1f
+        ));
+        newStepText.setHint("Step Here...");
+        if (!stepDesc.isEmpty()) newStepText.setText(stepDesc);
+        newStepText.setLines(4);
+        newStepText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) { }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (blankStepField == currentStepView) {
+                    blankStepField = null;
+                    EditActivity.this.addNewElementToStepsView("");
+                }
+            }
+        });
+        currentStepView.addView(newStepText);
+
+        stepsView.addView(currentStepView);
+        blankStepField = currentStepView;
     }
 }
