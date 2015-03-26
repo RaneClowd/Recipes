@@ -1,6 +1,12 @@
 package com.mayken.sheldon.recipes;
 
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.text.Editable;
@@ -13,6 +19,13 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TabHost;
 
+import com.googlecode.tesseract.android.TessBaseAPI;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
 public class EditActivity extends ActionBarActivity {
 
     public final static String RECIPE_NAME_KEY = "com.mayken.sheldon.recipes.newname";
@@ -22,6 +35,8 @@ public class EditActivity extends ActionBarActivity {
 
     private LinearLayout stepsView;
     private LinearLayout blankStepField;
+
+    private String imagePath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +64,24 @@ public class EditActivity extends ActionBarActivity {
 
         addNewElementToIngredientView("");
         addNewElementToStepsView("");
+
+        imagePath = "/sdcard/tmp";
+
+        Button captureButton = (Button)findViewById(R.id.edit_ingredients_capture);
+        captureButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                captureImage(0);
+            }
+        });
+
+        captureButton = (Button)findViewById(R.id.edit_steps_capture);
+        captureButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                captureImage(1);
+            }
+        });
     }
 
     @Override
@@ -187,5 +220,42 @@ public class EditActivity extends ActionBarActivity {
 
         stepsView.addView(currentStepView);
         blankStepField = currentStepView;
+    }
+
+
+    private void captureImage(int requestCode) {
+        File imageDirectories = new File(Environment.getExternalStorageDirectory(), "tmp");
+        imageDirectories.mkdirs();
+
+        File imageFile = new File(imageDirectories.getPath(), "tmpimageshot.jpg");
+        Uri outputFileUri = Uri.fromFile(imageFile);
+
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, outputFileUri);
+
+        startActivityForResult(intent, requestCode);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == RESULT_OK) {
+            processImageForRequestCode(requestCode);
+        }
+    }
+
+    private void processImageForRequestCode(int requestCode) {
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inSampleSize = 4;
+
+        File imgDir = new File(Environment.getExternalStorageDirectory(), "tmp");
+        File imgFile = new File(imgDir.getPath(), "tmpimageshot.jpg");
+        Bitmap bitmap = BitmapFactory.decodeFile(imgFile.getPath());
+
+        TessBaseAPI baseAPI = new TessBaseAPI();
+        baseAPI.init("/sdcard/recipes/langtraindata/", "eng");
+        baseAPI.setImage(bitmap);
+
+        String imgText = baseAPI.getUTF8Text();
+        baseAPI.end();
     }
 }
