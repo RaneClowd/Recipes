@@ -1,10 +1,13 @@
 package com.mayken.sheldon.recipes;
 
-import android.content.Context;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
@@ -22,12 +25,12 @@ import android.widget.TabHost;
 import com.googlecode.tesseract.android.TessBaseAPI;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 public class EditActivity extends ActionBarActivity {
 
+    public final static int IngredientsCapture = 1;
+    public final static int StepsCapture = 2;
     public final static String RECIPE_NAME_KEY = "com.mayken.sheldon.recipes.newname";
 
     private LinearLayout ingredientView;
@@ -35,8 +38,6 @@ public class EditActivity extends ActionBarActivity {
 
     private LinearLayout stepsView;
     private LinearLayout blankStepField;
-
-    private String imagePath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,16 +63,14 @@ public class EditActivity extends ActionBarActivity {
         ingredientView = (LinearLayout)findViewById(R.id.edit_indgredient_list);
         stepsView = (LinearLayout)findViewById(R.id.edit_steps_list);
 
-        addNewElementToIngredientView("");
-        addNewElementToStepsView("");
-
-        imagePath = "/sdcard/tmp";
+        newIngredientView("");
+        newStepView("");
 
         Button captureButton = (Button)findViewById(R.id.edit_ingredients_capture);
         captureButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                captureImage(0);
+                captureImage(IngredientsCapture);
             }
         });
 
@@ -79,7 +78,7 @@ public class EditActivity extends ActionBarActivity {
         captureButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                captureImage(1);
+                captureImage(StepsCapture);
             }
         });
     }
@@ -107,8 +106,7 @@ public class EditActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-
-    private void addNewElementToIngredientView(String ingredientDesc) {
+    private void newIngredientView(String ingredientDesc) {
         final LinearLayout currentIngredientView = new LinearLayout(this);
         currentIngredientView.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -139,7 +137,6 @@ public class EditActivity extends ActionBarActivity {
                 1f
         ));
         newIngredientText.setHint("Ingredient Here...");
-        if (!ingredientDesc.isEmpty()) newIngredientText.setText(ingredientDesc);
         newIngredientText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -155,7 +152,7 @@ public class EditActivity extends ActionBarActivity {
             public void afterTextChanged(Editable s) {
                 if (blankIngredientField == currentIngredientView) {
                     blankIngredientField = null;
-                    EditActivity.this.addNewElementToIngredientView("");
+                    EditActivity.this.newIngredientView("");
                 } else if (s.length() == 0) {
                     ingredientView.removeView(blankIngredientField);
                     blankIngredientField = currentIngredientView;
@@ -165,10 +162,13 @@ public class EditActivity extends ActionBarActivity {
         currentIngredientView.addView(newIngredientText);
 
         ingredientView.addView(currentIngredientView);
-        blankIngredientField = currentIngredientView;
+        if (!ingredientDesc.isEmpty()) {
+            newIngredientText.setText(ingredientDesc);
+            blankIngredientField = currentIngredientView;
+        }
     }
 
-    private void addNewElementToStepsView(String stepDesc) {
+    private void newStepView(String stepDesc) {
         final LinearLayout currentStepView = new LinearLayout(this);
         currentStepView.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -199,7 +199,6 @@ public class EditActivity extends ActionBarActivity {
                 1f
         ));
         newStepText.setHint("Step Here...");
-        if (!stepDesc.isEmpty()) newStepText.setText(stepDesc);
         newStepText.setLines(4);
         newStepText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -212,14 +211,18 @@ public class EditActivity extends ActionBarActivity {
             public void afterTextChanged(Editable s) {
                 if (blankStepField == currentStepView) {
                     blankStepField = null;
-                    EditActivity.this.addNewElementToStepsView("");
+                    EditActivity.this.newStepView("");
                 }
             }
         });
         currentStepView.addView(newStepText);
 
         stepsView.addView(currentStepView);
-        blankStepField = currentStepView;
+
+        if (!stepDesc.isEmpty()) {
+            newStepText.setText(stepDesc);
+            blankStepField = currentStepView;
+        }
     }
 
 
@@ -249,13 +252,83 @@ public class EditActivity extends ActionBarActivity {
 
         File imgDir = new File(Environment.getExternalStorageDirectory(), "tmp");
         File imgFile = new File(imgDir.getPath(), "tmpimageshot.jpg");
-        Bitmap bitmap = BitmapFactory.decodeFile(imgFile.getPath());
 
-        TessBaseAPI baseAPI = new TessBaseAPI();
-        baseAPI.init("/sdcard/recipes/langtraindata/", "eng");
-        baseAPI.setImage(bitmap);
-
-        String imgText = baseAPI.getUTF8Text();
-        baseAPI.end();
+        OcrTask task = new OcrTask();
+        task.operationCode = requestCode;
+        task.execute(imgFile.getPath());
     }
+
+
+    private class OcrTask extends AsyncTask<String, Void, String> {
+
+        public int operationCode;
+        private ProgressDialog dialog;
+
+        @Override protected void onPreExecute() {
+            dialog = ProgressDialog.show(EditActivity.this, "", "Reading Image...", true);
+            dialog.show();
+        }
+
+        @Override protected String doInBackground(String... params) {
+            String imgPath = params[0];
+
+            int rotate = 0;
+            try {
+                ExifInterface exif = new ExifInterface(imgPath);
+                int exifOrientation = exif.getAttributeInt(
+                        ExifInterface.TAG_ORIENTATION,
+                        ExifInterface.ORIENTATION_NORMAL);
+
+                switch (exifOrientation) {
+                    case ExifInterface.ORIENTATION_ROTATE_90:
+                        rotate = 90;
+                        break;
+
+                    case ExifInterface.ORIENTATION_ROTATE_180:
+                        rotate = 180;
+                        break;
+
+                    case ExifInterface.ORIENTATION_ROTATE_270:
+                        rotate = 270;
+                        break;
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            Bitmap bitmap = BitmapFactory.decodeFile(imgPath);
+            if (rotate != 0) {
+                int w = bitmap.getWidth();
+                int h = bitmap.getHeight();
+
+                Matrix matrix = new Matrix();
+                matrix.preRotate(rotate);
+
+                bitmap = Bitmap.createBitmap(bitmap, 0, 0, w, h, matrix, false);
+            }
+            bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
+
+            TessBaseAPI baseAPI = new TessBaseAPI();
+            baseAPI.init("/sdcard/recipes/langtraindata/", "eng");
+            baseAPI.setImage(bitmap);
+
+            String imgText = baseAPI.getUTF8Text();
+            baseAPI.end();
+
+
+            return imgText;
+        }
+
+        @Override protected void onPostExecute(String result) {
+            if (operationCode == IngredientsCapture) {
+                // process multiple lines
+            } else {
+                EditActivity.this.newStepView(result);
+            }
+
+            dialog.dismiss();
+        }
+    }
+
 }
